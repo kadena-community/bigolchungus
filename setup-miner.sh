@@ -28,7 +28,7 @@ Description=Kadena Miner Service On %I
 EnvironmentFile=/home/kadena-miner/env
 User=kadena-miner
 WorkingDirectory=/home/kadena-miner
-ExecStart=/home/kadena-miner/chainweb-miner gpu $NODES --miner-key $PUBLIC_KEY --miner-account $PUBLIC_KEY --log-level debug $CHAIN --miner-path /home/kadena-miner/test_opencl.sh --miner-args %I
+ExecStart=/home/kadena-miner/chainweb-miner gpu \$NODES --miner-key \$PUBLIC_KEY --miner-account \$PUBLIC_KEY --log-level debug \$CHAIN --miner-path /home/kadena-miner/test_opencl.sh --miner-args %I
 Restart=always
 RestartSec=3
 
