@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <inttypes.h>
 #include <chrono>
+#include <sstream>
+#include <string>
 
 #include "blake2s_ref.h"
 #include "common.h"
@@ -58,7 +60,7 @@ int main(int argc, const char * const * argv) {
     if (argc == 2) {
         read_target_bytes(argv[1], target_hash);
     } else {
-        std::istringstream(std::string(argv[1])) >> i;
+        std::istringstream(std::string(argv[1])) >> deviceOverride;
         read_target_bytes(argv[2], target_hash);
     }
 
