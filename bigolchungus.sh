@@ -8,7 +8,7 @@ WORK_SET_SIZE=64
 GLOBAL_SIZE=16777216 # (1024*1024*16)
 
 
-exec $MYDIR/test_opencl \
+exec $MYDIR/bigolchungus \
   $DEVICE_OVERRIDE \
   $PLATFORM_OVERRIDE \
   $QUIET \

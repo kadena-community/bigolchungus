@@ -31,3 +31,9 @@
 *.out
 *.app
 .vscode/
+
+CMakeCache.txt
+CMakeFiles/
+bigolchungus
+cmake_install.cmake
+Makefile
