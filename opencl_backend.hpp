@@ -22,7 +22,7 @@ struct opencl_backend {
 
     search_nonce_kernel* search_nonce;
 
-    opencl_backend(size_t search_nonce_size, bool quiet, int device_override);
+    opencl_backend(size_t search_nonce_size, bool quiet, int device_override, int platform_override);
     ~opencl_backend();
 
     void start_search(

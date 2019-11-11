@@ -60,7 +60,7 @@ namespace detail {
         return program;
     }
 
-    cl_platform_id choosePlatform(bool quiet) {
+    cl_platform_id choosePlatform(bool quiet, int platform_override) {
         cl_uint platformIdCount = 0;
         clGetPlatformIDs (0, nullptr, &platformIdCount);
 
@@ -78,14 +78,18 @@ namespace detail {
             if (!quiet) std::cerr << "\t (" << i << ") : " << detail::getPlatformName(platformIds[i]) << std::endl;
         }
 
-        if (platformIdCount > 1) {
-            if (!quiet) std::cerr << "Using the first platform." << std::endl;
+        if (platform_override == -1) {
+          if (platformIdCount > 1) {
+              if (!quiet) std::cerr << "Using the first platform." << std::endl;
+          }
+          return platformIds[0];
+        } else {
+          return platformIds[platform_override];
         }
-        return platformIds[0];
     }
 
     std::pair<cl_device_id, cl_context> chooseDeviceAndCreateContext(
-        cl_platform_id platform_id, bool quiet, int device_override
+        cl_platform_id platform_id, bool quiet, int device_override 
     ) {
         cl_uint deviceIdCount = 0;
         clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_ALL, 0, nullptr, &deviceIdCount);
@@ -132,8 +136,8 @@ namespace detail {
     }
 };
 
-opencl_backend::opencl_backend(size_t search_nonce_size, bool quiet, int device_override) {
-    platform_id = detail::choosePlatform(quiet);
+opencl_backend::opencl_backend(size_t search_nonce_size, bool quiet, int device_override, int platform_override) {
+    platform_id = detail::choosePlatform(quiet, platform_override);
     std::pair<cl_device_id, cl_context> res =
         detail::chooseDeviceAndCreateContext(platform_id, quiet, device_override);
     device_id = res.first;

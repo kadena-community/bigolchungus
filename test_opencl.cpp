@@ -52,7 +52,7 @@ int main(int argc, const char * const * argv) {
     bool quiet = false;
 
     int deviceOverride = 0;
-    int platformOverride = 0;
+    int platformOverride = -1;
     int quietInput = 0;
     int localWorkSize = 0;
     int workSetSize = 0;
@@ -122,7 +122,7 @@ int main(int argc, const char * const * argv) {
     fread(&start_nonce, 1, 8, urandom);
     fclose(urandom);
 
-    opencl_backend backend(nonce_step_size, true, deviceOverride);
+    opencl_backend backend(nonce_step_size, true, deviceOverride, platformOverride);
 
     backend.start_search(
         global_size, local_size, workset_size,
