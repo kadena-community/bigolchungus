@@ -50,19 +50,34 @@ int main(int argc, const char * const * argv) {
     // test_opencl <hash>
 
     bool quiet = false;
-    int deviceOverride = 0;
 
-    if (!quiet) fprintf(stderr, "Started\n");
+    int deviceOverride = 0;
+    int platformOverride = 0;
+    int quietInput = 0;
+    int localWorkSize = 0;
+    int workSetSize = 0;
+    int globalSize = 0;
 
     // The target HASH.
-    assert(argc == 2 || argc == 3);
+    assert(argc == 2 || argc == 8);
     uint8_t target_hash[32];
     if (argc == 2) {
         read_target_bytes(argv[1], target_hash);
     } else {
         std::istringstream(std::string(argv[1])) >> deviceOverride;
-        read_target_bytes(argv[2], target_hash);
+        std::istringstream(std::string(argv[2])) >> platformOverride;
+
+        std::istringstream(std::string(argv[3])) >> quietInput;
+        if(quietInput > 0) quiet = true;
+
+        std::istringstream(std::string(argv[4])) >> localWorkSize;
+        std::istringstream(std::string(argv[5])) >> workSetSize;
+        std::istringstream(std::string(argv[6])) >> globalSize;
+        read_target_bytes(argv[7], target_hash);
     }
+
+    if (!quiet) fprintf(stderr, "Started\n");
+
 
     if (!quiet) {
         fprintf(stderr, "hash = ");
@@ -95,9 +110,9 @@ int main(int argc, const char * const * argv) {
 
     if (!quiet) fprintf(stderr, "last_block_size = %d\n", last_block_size);
 
-    size_t global_size = 1024 * 1024 * 16;
-    size_t local_size = 1024;
-    size_t workset_size = 64;
+    size_t global_size = globalSize;
+    size_t local_size = localWorkSize;
+    size_t workset_size = workSetSize;
 
     uint64_t nonce_step_size = global_size * workset_size;
     // uint8_t* result = new uint8_t[nonce_step_size * 64];

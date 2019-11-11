@@ -101,7 +101,7 @@ namespace detail {
         clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_ALL, deviceIdCount, deviceIds.data(), nullptr);
 
         int selectedDeviceId = -1;
-        if (!quiet || device_override < 0) {
+        if (device_override < 0) {
             for (cl_uint i = 0; i < deviceIdCount; ++i) {
                 std::cerr << "\t (" << i << ") : " << detail::getDeviceName(deviceIds[i]) << std::endl;
             }
