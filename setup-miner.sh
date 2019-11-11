@@ -14,21 +14,21 @@ useradd kadena-miner
 # OpenCL
 ubuntu-drivers autoinstall --gpgpu
 
-git clone https://github.com/edmundnoble/bigolchungus.git /home/kadena-miner/MinerBoi
-cd /home/kadena-miner/MinerBoi
+git clone https://github.com/kadena-community/bigolchungus.git /home/kadena-miner/BigOlChungus
+cd /home/kadena-miner/BigOlChungus
 cmake .
 make
-cp -r /home/kadena-miner/MinerBoi/kernels /home/kadena-miner
+cp -r /home/kadena-miner/BigOlChungus/kernels /home/kadena-miner
 
 cat <<EOF > /etc/systemd/system/kadena-miner@.service
 [Unit]
-Description=Kadena Miner Service On %I
+Description=Big Ol Chungus On %I
 
 [Service]
 EnvironmentFile=/home/kadena-miner/env
 User=kadena-miner
 WorkingDirectory=/home/kadena-miner
-ExecStart=/home/kadena-miner/chainweb-miner gpu \$NODES --miner-key \$PUBLIC_KEY --miner-account \$PUBLIC_KEY --log-level debug \$CHAIN --miner-path /home/kadena-miner/MinerBoi/test_opencl.sh --miner-args %I
+ExecStart=/home/kadena-miner/chainweb-miner gpu \$NODES --miner-key \$PUBLIC_KEY --miner-account \$PUBLIC_KEY --log-level debug \$CHAIN --miner-path /home/kadena-miner/BigOlChungus/bigolchungus.sh --miner-args %I
 Restart=always
 RestartSec=3
 
@@ -48,7 +48,7 @@ chown -R kadena-miner /home/kadena-miner/
 reboot
 
 # after running:
-# download the miner to /home/kadena-miner/test_opencl
+# download the miner to /home/kadena-miner/bigolchungus
 # make sure /home/kadena-miner/kernels contains kernel.cl
 # `systemctl start kadena-miner@0` starts the miner on GPU 0, etc
 # `systemctl enable kadena-miner@0` makes the miner for GPU 0 start with the system, etc
