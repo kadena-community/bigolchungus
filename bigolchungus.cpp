@@ -54,9 +54,9 @@ int main(int argc, const char * const * argv) {
     int deviceOverride = 0;
     int platformOverride = -1;
     int quietInput = 0;
-    int localWorkSize = 0;
-    int workSetSize = 0;
-    int globalSize = 0;
+    int localWorkSize = 256;
+    int workSetSize = 64;
+    int globalSize = 1024 * 1024 * 16;
 
     // The target HASH.
     assert(argc == 2 || argc == 8);

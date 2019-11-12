@@ -195,7 +195,8 @@ void opencl_backend::start_search(
         char j = (char)('A' + (3 - i / 8));
         ss << "-D" << j << "0=" << (*(uint64_t*)(target_hash + i)) << "UL ";
     }
-    ss << "-DWORKSET_SIZE=" << workset_size;
+    ss << "-DWORKSET_SIZE=" << workset_size << " ";
+    ss << "-Werror ";
 
     std::string options = ss.str();
     std::cerr << options << std::endl;
@@ -264,6 +265,7 @@ uint64_t opencl_backend::continue_search(uint64_t nonce) {
         0, nullptr, nullptr));
     return res;
 }
+
 void opencl_backend::stop_search() {
     if (search_nonce != nullptr) {
         clReleaseMemObject(search_nonce->result_buffer);

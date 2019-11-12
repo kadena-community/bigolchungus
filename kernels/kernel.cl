@@ -8,6 +8,7 @@
 
 #define BLAKE2S_BLOCKBYTES 64
 
+
 typedef unsigned long  uint64_t;
 typedef signed   long   int64_t;
 typedef unsigned int   uint32_t;
@@ -16,10 +17,6 @@ typedef unsigned short uint16_t;
 typedef signed   short  int16_t;
 typedef unsigned char   uint8_t;
 typedef signed   char    int8_t;
-
-inline uint32_t rotr32( const uint32_t w, const unsigned c ) {
-  return ( w >> c ) | ( w << ( 32 - c ) );
-}
 
 #define IV0 0x6A09E667UL
 #define IV1 0xBB67AE85UL
@@ -206,16 +203,16 @@ inline uint32_t rotr32( const uint32_t w, const unsigned c ) {
 #define Mx_(n)      Mx__(n)
 #define Mx__(n)     M ## n
 
-#define G(m0, m1, a,b,c,d)                      \
-  do {                                      \
-    a = a + b + (m0); \
-    d = rotr32(d ^ a, 16);                  \
-    c = c + d;                              \
-    b = rotr32(b ^ c, 12);                  \
-    a = a + b + (m1); \
-    d = rotr32(d ^ a, 8);                   \
-    c = c + d;                              \
-    b = rotr32(b ^ c, 7);                   \
+#define G(m0, m1, a,b,c,d)       \
+  do {                           \
+    a = a + b + (m0);            \
+    d = rotate(d ^ a, (uint)16); \
+    c = c + d;                   \
+    b = rotate(b ^ c, (uint)20); \
+    a = a + b + (m1);            \
+    d = rotate(d ^ a, (uint)24); \
+    c = c + d;                   \
+    b = rotate(b ^ c, (uint)25); \
   } while(0)
 
 #define ROUND(r)   do { \
@@ -231,107 +228,117 @@ inline uint32_t rotr32( const uint32_t w, const unsigned c ) {
 
 #define Bx(r, i) B ## r ## i
 
-#define DO_COMPRESS(r) do { \
-    M2 = Bx(r, 2); \
-    M3 = Bx(r, 3); \
-    M4 = Bx(r, 4); \
-    M5 = Bx(r, 5); \
-    M6 = Bx(r, 6); \
-    M7 = Bx(r, 7); \
-    M8 = Bx(r, 8); \
-    M9 = Bx(r, 9); \
-    MA = Bx(r, A); \
-    MB = Bx(r, B); \
-    MC = Bx(r, C); \
-    MD = Bx(r, D); \
-    ME = Bx(r, E); \
-    MF = Bx(r, F); \
-    V0 = H0; V1 = H1; V2 = H2; V3 = H3; \
-    V4 = H4; V5 = H5; V6 = H6; V7 = H7; \
-    V8 = IV0; V9 = IV1; VA = IV2; VB = IV3; \
-    VC = T0 ^ IV4; VD = T1 ^ IV5; VE = F0 ^ IV6; VF = F1 ^ IV7; \
-    ROUND(0); \
-    ROUND(1); \
-    ROUND(2); \
-    ROUND(3); \
-    ROUND(4); \
-    ROUND(5); \
-    ROUND(6); \
-    ROUND(7); \
-    ROUND(8); \
-    ROUND(9); \
-    H0 = H0 ^ V0 ^ V8;\
-    H1 = H1 ^ V1 ^ V9;\
-    H2 = H2 ^ V2 ^ VA;\
-    H3 = H3 ^ V3 ^ VB;\
-    H4 = H4 ^ V4 ^ VC;\
-    H5 = H5 ^ V5 ^ VD;\
-    H6 = H6 ^ V6 ^ VE;\
-    H7 = H7 ^ V7 ^ VF;\
+#define DO_COMPRESS(r, f0, t0) do { \
+    M2 = Bx(r, 2);              \
+    M3 = Bx(r, 3);              \
+    M4 = Bx(r, 4);              \
+    M5 = Bx(r, 5);              \
+    M6 = Bx(r, 6);              \
+    M7 = Bx(r, 7);              \
+    M8 = Bx(r, 8);              \
+    M9 = Bx(r, 9);              \
+    MA = Bx(r, A);              \
+    MB = Bx(r, B);              \
+    MC = Bx(r, C);              \
+    MD = Bx(r, D);              \
+    ME = Bx(r, E);              \
+    MF = Bx(r, F);              \
+    V0 = H0;                    \
+    V1 = H1;                    \
+    V2 = H2;                    \
+    V3 = H3;                    \
+    V4 = H4;                    \
+    V5 = H5;                    \
+    V6 = H6;                    \
+    V7 = H7;                    \
+    V8 = IV0;                   \
+    V9 = IV1;                   \
+    VA = IV2;                   \
+    VB = IV3;                   \
+    VC = t0 ^ IV4;              \
+    VD = IV5;                   \
+    VE = f0 ^ IV6;              \
+    VF = IV7;                   \
+    ROUND(0);                   \
+    ROUND(1);                   \
+    ROUND(2);                   \
+    ROUND(3);                   \
+    ROUND(4);                   \
+    ROUND(5);                   \
+    ROUND(6);                   \
+    ROUND(7);                   \
+    ROUND(8);                   \
+    ROUND(9);                   \
+    H0 = H0 ^ V0 ^ V8;          \
+    H1 = H1 ^ V1 ^ V9;          \
+    H2 = H2 ^ V2 ^ VA;          \
+    H3 = H3 ^ V3 ^ VB;          \
+    H4 = H4 ^ V4 ^ VC;          \
+    H5 = H5 ^ V5 ^ VD;          \
+    H6 = H6 ^ V6 ^ VE;          \
+    H7 = H7 ^ V7 ^ VF;          \
   } while (0)
 
-#define DO_COMPRESS_SIMPLE(r) do { \
-    M0 = Bx(r, 0); \
-    M1 = Bx(r, 1); \
-    DO_COMPRESS(r); \
+#define DO_COMPRESS_SIMPLE(r, f0, t0) do { \
+    M0 = Bx(r, 0);                         \
+    M1 = Bx(r, 1);                         \
+    DO_COMPRESS(r, f0, t0);                \
   } while (0)
+
+#ifdef COMPARE_ALL
+  #define TEST_RESULT() (                           \
+      A0 > A                                        \
+      || (A0 == A && B0 > B)                        \
+      || (A0 == A && B0 == B && C0 > C)             \
+      || (A0 == A && B0 == B && C0 == C && D0 >= D) \
+    )
+#else
+  #define TEST_RESULT() (A0 > A)
+#endif
+
 
 kernel void search_nonce(uint64_t start_nonce, global uint64_t* result_ptr) {
-    size_t gid = get_global_id(0);
+  size_t gid = get_global_id(0);
 
-    uint64_t nonce0 = start_nonce + gid * WORKSET_SIZE;
+  uint64_t nonce0 = start_nonce + gid * WORKSET_SIZE;
 
-    for (uint64_t i = 0; i < WORKSET_SIZE; i++) {
-      uint64_t nonce = nonce0 + i;
-      uint32_t H0, H1, H2, H3, H4, H5, H6, H7;
+  for (uint64_t i = 0; i < WORKSET_SIZE; i++) {
+    uint64_t nonce = nonce0 + i;
+    uint32_t H0, H1, H2, H3, H4, H5, H6, H7;
 
-      H0 = 0x6b08e647UL;
-      H1 = IV(1);
-      H2 = IV(2);
-      H3 = IV(3);
-      H4 = IV(4);
-      H5 = IV(5);
-      H6 = IV(6);
-      H7 = IV(7);
+    H0 = 0x6b08e647UL;
+    H1 = IV(1);
+    H2 = IV(2);
+    H3 = IV(3);
+    H4 = IV(4);
+    H5 = IV(5);
+    H6 = IV(6);
+    H7 = IV(7);
 
-      uint32_t T0 = 0, T1 = 0, F0 = 0, F1 = 0;
-      uint32_t M0, M1, M2, M3, M4, M5, M6, M7;
-      uint32_t M8, M9, MA, MB, MC, MD, ME, MF;
-      uint32_t V0, V1, V2, V3, V4, V5, V6, V7;
-      uint32_t V8, V9, VA, VB, VC, VD, VE, VF;
+    uint32_t M0, M1, M2, M3, M4, M5, M6, M7;
+    uint32_t M8, M9, MA, MB, MC, MD, ME, MF;
+    uint32_t V0, V1, V2, V3, V4, V5, V6, V7;
+    uint32_t V8, V9, VA, VB, VC, VD, VE, VF;
 
-      T0 += BLAKE2S_BLOCKBYTES;
-      T1 += ( T0 < BLAKE2S_BLOCKBYTES );
-      M0 = (uint32_t) (nonce & 0xFFFFFFFF);
-      M1 = (uint32_t) (nonce >> 32);
-      DO_COMPRESS(0);
+    M0 = (uint32_t) (nonce & 0xFFFFFFFF);
+    M1 = (uint32_t) (nonce >> 32);
 
-      T0 += BLAKE2S_BLOCKBYTES;
-      T1 += ( T0 < BLAKE2S_BLOCKBYTES );
-      DO_COMPRESS_SIMPLE(1);
+    DO_COMPRESS(0, 0, 0x40);
+    DO_COMPRESS_SIMPLE(1, 0x0, 0x80);
+    DO_COMPRESS_SIMPLE(2, 0x0, 0xC0);
+    DO_COMPRESS_SIMPLE(3, 0x0, 0x100);
+    DO_COMPRESS_SIMPLE(4, 0xFFFFFFFF, 0x11E);
 
-      T0 += BLAKE2S_BLOCKBYTES;
-      T1 += ( T0 < BLAKE2S_BLOCKBYTES );
-      DO_COMPRESS_SIMPLE(2);
+    uint64_t A = (((uint64_t) H7) << 32) | H6;
 
-      T0 += BLAKE2S_BLOCKBYTES;
-      T1 += ( T0 < BLAKE2S_BLOCKBYTES );
-      DO_COMPRESS_SIMPLE(3);
+    #ifdef COMPARE_ALL
+    uint64_t B = (((uint64_t) H5) << 32) | H4;
+    uint64_t C = (((uint64_t) H3) << 32) | H2;
+    uint64_t D = (((uint64_t) H1) << 32) | H0;
+    #endif
 
-      F0 = -1;
-      T0 += 30;
-      T1 += ( T0 < 30 );
-      DO_COMPRESS_SIMPLE(4);
-
-      uint64_t A = (((uint64_t) H7) << 32) | H6;
-      uint64_t B = (((uint64_t) H5) << 32) | H4;
-      uint64_t C = (((uint64_t) H3) << 32) | H2;
-      uint64_t D = (((uint64_t) H1) << 32) | H0;
-
-      if (A0 > A || (A0 == A && B0 > B)
-          || (A0 == A && B0 == B && C0 > C)
-          || (A0 == A && B0 == B && C0 == C && D0 >= D)) {
-          *result_ptr = nonce;
-      }
+    if (TEST_RESULT()) {
+      *result_ptr = nonce;
     }
+  }
 }
