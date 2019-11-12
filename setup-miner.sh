@@ -28,7 +28,7 @@ Description=Big Ol Chungus On %I
 EnvironmentFile=/home/kadena-miner/env
 User=kadena-miner
 WorkingDirectory=/home/kadena-miner
-ExecStart=/home/kadena-miner/chainweb-miner gpu \$NODES --miner-key \$PUBLIC_KEY --miner-account \$PUBLIC_KEY --log-level debug \$CHAIN --miner-path /home/kadena-miner/BigOlChungus/bigolchungus.sh --miner-args %I
+ExecStart=/home/kadena-miner/chainweb-miner gpu \$NODES --miner-key \$PUBLIC_KEY --miner-account \$PUBLIC_KEY --log-level debug \$CHAIN --miner-path /home/kadena-miner/BigOlChungus/bigolchungus --miner-args "-d %I"
 Restart=always
 RestartSec=3
 

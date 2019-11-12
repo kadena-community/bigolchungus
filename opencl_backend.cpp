@@ -80,7 +80,7 @@ namespace detail {
 
         if (platform_override == -1) {
           if (platformIdCount > 1) {
-              if (!quiet) std::cerr << "Using the first platform." << std::endl;
+              if (!quiet) std::cerr << "Multiple platforms found. Using the first platform." << std::endl;
           }
           return platformIds[0];
         } else {
