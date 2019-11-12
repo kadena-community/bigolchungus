@@ -18,7 +18,6 @@ git clone https://github.com/kadena-community/bigolchungus.git /home/kadena-mine
 cd /home/kadena-miner/BigOlChungus
 cmake .
 make
-cp -r /home/kadena-miner/BigOlChungus/kernels /home/kadena-miner
 
 cat <<EOF > /etc/systemd/system/kadena-miner@.service
 [Unit]
@@ -28,7 +27,7 @@ Description=Big Ol Chungus On %I
 EnvironmentFile=/home/kadena-miner/env
 User=kadena-miner
 WorkingDirectory=/home/kadena-miner
-ExecStart=/home/kadena-miner/chainweb-miner gpu \$NODES --miner-key \$PUBLIC_KEY --miner-account \$PUBLIC_KEY --log-level debug \$CHAIN --miner-path /home/kadena-miner/BigOlChungus/bigolchungus.sh --miner-args %I
+ExecStart=/home/kadena-miner/chainweb-miner gpu \$NODES --miner-key \$PUBLIC_KEY --miner-account \$PUBLIC_KEY --log-level debug \$CHAIN --miner-path /home/kadena-miner/BigOlChungus/bigolchungus --miner-args "-k /home/kadena-miner/BigOlChungus/kernels/kernel.cl -d %I"
 Restart=always
 RestartSec=3
 

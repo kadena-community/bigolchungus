@@ -80,7 +80,7 @@ namespace detail {
 
         if (platform_override == -1) {
           if (platformIdCount > 1) {
-              if (!quiet) std::cerr << "Using the first platform." << std::endl;
+              if (!quiet) std::cerr << "Multiple platforms found. Using the first platform." << std::endl;
           }
           return platformIds[0];
         } else {
@@ -136,12 +136,18 @@ namespace detail {
     }
 };
 
-opencl_backend::opencl_backend(size_t search_nonce_size, bool quiet, int device_override, int platform_override) {
+opencl_backend::opencl_backend(size_t search_nonce_size, bool quiet, int device_override, int platform_override, char* kernel_path_override) {
     platform_id = detail::choosePlatform(quiet, platform_override);
     std::pair<cl_device_id, cl_context> res =
         detail::chooseDeviceAndCreateContext(platform_id, quiet, device_override);
     device_id = res.first;
     context = res.second;
+
+    if(kernel_path_override) {
+      kernel_path = kernel_path_override;
+    } else {
+      kernel_path = "kernels/kernel.cl";
+    }
 
     if (!quiet) std::cerr << "Creating command queue" << std::endl;
     // http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateCommandQueue.html
@@ -177,7 +183,7 @@ void opencl_backend::start_search(
 
     std::cerr << "Creating program" << std::endl;
     // Create a program from source
-    search_nonce->program = detail::createProgram(detail::loadKernel("kernels/kernel.cl"), context);
+    search_nonce->program = detail::createProgram(detail::loadKernel(kernel_path), context);
 
     std::ostringstream ss;
     for (size_t i = 0; i < 320; i+=4) {
@@ -230,6 +236,7 @@ void opencl_backend::start_search(
     std::cerr << "Setting search_nonce arguments" << std::endl;
     clSetKernelArg(search_nonce->kernel, 1, sizeof(cl_mem), &search_nonce->result_buffer);
 }
+
 uint64_t opencl_backend::continue_search(uint64_t nonce) {
     clSetKernelArg(search_nonce->kernel, 0, 8, &nonce);
 
