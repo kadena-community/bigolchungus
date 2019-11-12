@@ -9,21 +9,42 @@ GLOBAL_SIZE=16777216 # (1024*1024*16)
 
 usage() {
   echo "
-  bigolchungus.sh [ -d <device id>        ] \ # default 0
-                  [ -p <platform id>      ] \ # default 0
-                  [ -l <local work size>  ] \ # default 256
-                  [ -w <work set size     ] \ # default 64
-                  [ -g <global work size> ] \ # default 16777216 (1024 * 1024 * 16)
-                  [ -v                    ]   # verbose mode
+  bigolchungus.sh [ -d <device id>        ]
+                  [ -p <platform id>      ]
+                  [ -l <local work size>  ]
+                  [ -w <work set size     ]
+                  [ -g <global work size> ]
+                  [ -v                    ]
                   <block>
 
-  Run \`clinfo\` to get your device and platform ids.
+  1. Device Selection
 
-  You should never have to modify \`work set size\` or \`global work size\`,  so -g and -w can be left alone.
-  
-  If you are on nVidia, you probably want \`-l 1024\`. 
+    -d
+      set \`device id\`.  Default \`0\`
 
-  If you are on AMD, the default is good.
+    -p
+      set \`platform id\`.  Default \`0\`
+
+    Run \`clinfo -l\` to get info about your device and platform ids.
+
+  2. Work size configuration 
+
+    -l
+      set \`local work size\`. Default \`256\`.
+      If you are on AMD, \`256\` is probably the best value for you.
+      If you are on nVidia, you probably want \`1024\`.
+
+    -w
+      set \`work set size\`. You should never have to modify this. Default \`64\`
+
+    -g
+      set \`global work size\`. You should never have to modify this. Default \`16777216\` (1024 * 1024 * 16)
+
+  3. Debugging
+
+    -v
+      enable verbose mode.
+
   "
 }
 
@@ -60,10 +81,10 @@ done
 shift $(expr $OPTIND - 1)
 
 exec $MYDIR/bigolchungus \
-  $DEVICE_OVERRIDE \
-  $PLATFORM_OVERRIDE \
-  $QUIET \
-  $LOCAL_WORK_SIZE \
-  $WORK_SET_SIZE \
-  $GLOBAL_SIZE \
+  $DEVICE_OVERRIDE       \
+  $PLATFORM_OVERRIDE     \
+  $QUIET                 \
+  $LOCAL_WORK_SIZE       \
+  $WORK_SET_SIZE         \
+  $GLOBAL_SIZE           \
   ${@} 2>> err
