@@ -6,10 +6,48 @@
 #include <chrono>
 #include <sstream>
 #include <string>
+#include <unistd.h>
 
 #include "blake2s_ref.h"
 #include "common.h"
 #include "opencl_backend.hpp"
+
+void usage() {
+  fprintf(
+    stderr,
+    "  bigolchungus.sh [ -d <device id>        ]\n"
+    "                  [ -p <platform id>      ]\n"
+    "                  [ -l <local work size>  ]\n"
+    "                  [ -w <work set size     ]\n"
+    "                  [ -g <global work size> ]\n"
+    "                  [ -v                    ]\n"
+    "                  <block>\n\n"
+    "  1. Device Selection\n\n"
+    "    -d\n"
+    "      set `device id`.\n"
+    "      Default `0`\n\n"
+    "    -p\n"
+    "      set `platform id`.  \n"
+    "      Default `0`\n\n"
+    "    Run `clinfo -l` to get info about your device and platform ids.\n\n"
+    "  2. Work size configuration \n\n"
+    "    -l\n"
+    "      set `local work size`.\n"
+    "      Default `256`.\n\n"
+    "      If you are on AMD, `256` is probably the best value for you.\n"
+    "      If you are on nVidia, you probably want `1024`.\n\n"
+    "    -w\n"
+    "      set `work set size`. You should never have to modify this.\n"
+    "      Default `64`\n\n"
+    "    -g\n"
+    "      set `global work size`. You should never have to modify this.\n"
+    "      Default `16777216` (1024 * 1024 * 16)\n\n"
+    "  3. Debugging\n\n"
+    "    -v\n"
+    "      enable verbose mode.\n\n"
+  );
+
+}
 
 void read_target_bytes(const char* str, uint8_t* target) {
     assert(strlen(str) == 64);
@@ -46,38 +84,49 @@ void ref_search_nonce(
     }
 }
 
-int main(int argc, const char * const * argv) {
+int main(int argc, char* const* argv) {
     // test_opencl <hash>
 
-    bool quiet = false;
-
+    bool quiet = true;
     int deviceOverride = 0;
     int platformOverride = -1;
-    int quietInput = 0;
     int localWorkSize = 256;
     int workSetSize = 64;
     int globalSize = 1024 * 1024 * 16;
 
-    // The target HASH.
-    assert(argc == 2 || argc == 8);
-    uint8_t target_hash[32];
-    if (argc == 2) {
-        read_target_bytes(argv[1], target_hash);
-    } else {
-        std::istringstream(std::string(argv[1])) >> deviceOverride;
-        std::istringstream(std::string(argv[2])) >> platformOverride;
-
-        std::istringstream(std::string(argv[3])) >> quietInput;
-        if(quietInput > 0) quiet = true;
-
-        std::istringstream(std::string(argv[4])) >> localWorkSize;
-        std::istringstream(std::string(argv[5])) >> workSetSize;
-        std::istringstream(std::string(argv[6])) >> globalSize;
-        read_target_bytes(argv[7], target_hash);
+    int opt;
+    while((opt = getopt(argc, argv, "d:p:l:w:g:vh")) != -1) {
+      switch(opt) {
+        case 'd':
+          deviceOverride=std::stoi(optarg);
+          break;
+        case 'p':
+          platformOverride=std::stoi(optarg);
+          break;
+        case 'l':
+          localWorkSize=std::stoi(optarg);
+          break;
+        case 'w':
+          workSetSize=std::stoi(optarg);
+          break;
+        case 'g':
+          globalSize=std::stoi(optarg);
+          break;
+        case 'v':
+          quiet = false;
+          break;
+        case 'h':
+        case '?':
+          usage();
+          exit(1);
+          break;
+      }
     }
 
-    if (!quiet) fprintf(stderr, "Started\n");
+    uint8_t target_hash[32];
+    read_target_bytes(argv[optind], target_hash);
 
+    if (!quiet) fprintf(stderr, "Started\n");
 
     if (!quiet) {
         fprintf(stderr, "hash = ");
@@ -164,3 +213,4 @@ int main(int argc, const char * const * argv) {
 
     return 0;
 }
+
