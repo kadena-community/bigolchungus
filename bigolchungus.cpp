@@ -86,6 +86,11 @@ void ref_search_nonce(
 
 int main(int argc, char* const* argv) {
     // test_opencl <hash>
+    
+    if(argc == 1) { 
+      usage();
+      exit(1);
+    }
 
     bool quiet = true;
     int deviceOverride = 0;
@@ -122,6 +127,7 @@ int main(int argc, char* const* argv) {
           break;
       }
     }
+
 
     uint8_t target_hash[32];
     read_target_bytes(argv[optind], target_hash);
