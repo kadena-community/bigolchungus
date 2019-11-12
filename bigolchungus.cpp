@@ -20,6 +20,7 @@ void usage() {
     "                  [ -l <local work size>  ]\n"
     "                  [ -w <work set size     ]\n"
     "                  [ -g <global work size> ]\n"
+    "                  [ -k <kernel location>  ]\n"
     "                  [ -v                    ]\n"
     "                  <block>\n\n"
     "  1. Device Selection\n\n"
@@ -30,7 +31,7 @@ void usage() {
     "      set `platform id`.  \n"
     "      Default `0`\n\n"
     "    Run `clinfo -l` to get info about your device and platform ids.\n\n"
-    "  2. Work size configuration \n\n"
+    "  2. Open CL work configuration \n\n"
     "    -l\n"
     "      set `local work size`.\n"
     "      Default `256`.\n\n"
@@ -42,6 +43,10 @@ void usage() {
     "    -g\n"
     "      set `global work size`. You should never have to modify this.\n"
     "      Default `16777216` (1024 * 1024 * 16)\n\n"
+    "    -k\n"
+    "      set `kernel location`\n"
+    "      If you are getting opencl error -46 or -30, try setting this to the absolute path of the `kernel.cl` file.\n"
+    "      Defaults to ./kernels/kernel.cl\n\n"
     "  3. Debugging\n\n"
     "    -v\n"
     "      enable verbose mode.\n\n"
@@ -98,24 +103,28 @@ int main(int argc, char* const* argv) {
     int localWorkSize = 256;
     int workSetSize = 64;
     int globalSize = 1024 * 1024 * 16;
+    char* kernelPath = nullptr;
 
     int opt;
-    while((opt = getopt(argc, argv, "d:p:l:w:g:vh")) != -1) {
+    while((opt = getopt(argc, argv, "d:p:l:w:g:k:vh")) != -1) {
       switch(opt) {
         case 'd':
-          deviceOverride=std::stoi(optarg);
+          deviceOverride = std::stoi(optarg);
           break;
         case 'p':
-          platformOverride=std::stoi(optarg);
+          platformOverride = std::stoi(optarg);
           break;
         case 'l':
-          localWorkSize=std::stoi(optarg);
+          localWorkSize = std::stoi(optarg);
           break;
         case 'w':
-          workSetSize=std::stoi(optarg);
+          workSetSize = std::stoi(optarg);
           break;
         case 'g':
-          globalSize=std::stoi(optarg);
+          globalSize = std::stoi(optarg);
+          break;
+        case 'k':
+          kernelPath = optarg;
           break;
         case 'v':
           quiet = false;
@@ -177,7 +186,7 @@ int main(int argc, char* const* argv) {
     fread(&start_nonce, 1, 8, urandom);
     fclose(urandom);
 
-    opencl_backend backend(nonce_step_size, true, deviceOverride, platformOverride);
+    opencl_backend backend(nonce_step_size, true, deviceOverride, platformOverride, kernelPath);
 
     backend.start_search(
         global_size, local_size, workset_size,
