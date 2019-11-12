@@ -199,9 +199,10 @@ typedef signed   char    int8_t;
 #define Z9E   D
 #define Z9F   0
 
-#define Mx(r, i)    Mx_(Z ## r ## i)
-#define Mx_(n)      Mx__(n)
-#define Mx__(n)     M ## n
+#define Mx(r0, r, i)    Mx_(r0, Z ## r ## i)
+#define Mx_(r0, n)      Mx__(r0, n)
+#define Mx__(r0, n)     Bx(r0, n)
+#define Bx(r, i) B ## r ## i
 
 #define G(m0, m1, a,b,c,d)       \
   do {                           \
@@ -215,34 +216,19 @@ typedef signed   char    int8_t;
     b = rotate(b ^ c, (uint)25); \
   } while(0)
 
-#define ROUND(r)   do { \
-    G(Mx(r, 0), Mx(r, 1), V0, V4, V8, VC); \
-    G(Mx(r, 2), Mx(r, 3), V1, V5, V9, VD); \
-    G(Mx(r, 4), Mx(r, 5), V2, V6, VA, VE); \
-    G(Mx(r, 6), Mx(r, 7), V3, V7, VB, VF); \
-    G(Mx(r, 8), Mx(r, 9), V0, V5, VA, VF); \
-    G(Mx(r, A), Mx(r, B), V1, V6, VB, VC); \
-    G(Mx(r, C), Mx(r, D), V2, V7, V8, VD); \
-    G(Mx(r, E), Mx(r, F), V3, V4, V9, VE); \
+
+#define ROUND(r0, r)   do { \
+    G(Mx(r0, r, 0), Mx(r0, r, 1), V0, V4, V8, VC); \
+    G(Mx(r0, r, 2), Mx(r0, r, 3), V1, V5, V9, VD); \
+    G(Mx(r0, r, 4), Mx(r0, r, 5), V2, V6, VA, VE); \
+    G(Mx(r0, r, 6), Mx(r0, r, 7), V3, V7, VB, VF); \
+    G(Mx(r0, r, 8), Mx(r0, r, 9), V0, V5, VA, VF); \
+    G(Mx(r0, r, A), Mx(r0, r, B), V1, V6, VB, VC); \
+    G(Mx(r0, r, C), Mx(r0, r, D), V2, V7, V8, VD); \
+    G(Mx(r0, r, E), Mx(r0, r, F), V3, V4, V9, VE); \
   } while(0)
 
-#define Bx(r, i) B ## r ## i
-
 #define DO_COMPRESS(r, f0, t0) do { \
-    M2 = Bx(r, 2);              \
-    M3 = Bx(r, 3);              \
-    M4 = Bx(r, 4);              \
-    M5 = Bx(r, 5);              \
-    M6 = Bx(r, 6);              \
-    M7 = Bx(r, 7);              \
-    M8 = Bx(r, 8);              \
-    M9 = Bx(r, 9);              \
-    MA = Bx(r, A);              \
-    MB = Bx(r, B);              \
-    MC = Bx(r, C);              \
-    MD = Bx(r, D);              \
-    ME = Bx(r, E);              \
-    MF = Bx(r, F);              \
     V0 = H0;                    \
     V1 = H1;                    \
     V2 = H2;                    \
@@ -259,16 +245,16 @@ typedef signed   char    int8_t;
     VD = IV5;                   \
     VE = f0 ^ IV6;              \
     VF = IV7;                   \
-    ROUND(0);                   \
-    ROUND(1);                   \
-    ROUND(2);                   \
-    ROUND(3);                   \
-    ROUND(4);                   \
-    ROUND(5);                   \
-    ROUND(6);                   \
-    ROUND(7);                   \
-    ROUND(8);                   \
-    ROUND(9);                   \
+    ROUND(r, 0);                \
+    ROUND(r, 1);                \
+    ROUND(r, 2);                \
+    ROUND(r, 3);                \
+    ROUND(r, 4);                \
+    ROUND(r, 5);                \
+    ROUND(r, 6);                \
+    ROUND(r, 7);                \
+    ROUND(r, 8);                \
+    ROUND(r, 9);                \
     H0 = H0 ^ V0 ^ V8;          \
     H1 = H1 ^ V1 ^ V9;          \
     H2 = H2 ^ V2 ^ VA;          \
@@ -277,12 +263,6 @@ typedef signed   char    int8_t;
     H5 = H5 ^ V5 ^ VD;          \
     H6 = H6 ^ V6 ^ VE;          \
     H7 = H7 ^ V7 ^ VF;          \
-  } while (0)
-
-#define DO_COMPRESS_SIMPLE(r, f0, t0) do { \
-    M0 = Bx(r, 0);                         \
-    M1 = Bx(r, 1);                         \
-    DO_COMPRESS(r, f0, t0);                \
   } while (0)
 
 #ifdef COMPARE_ALL
@@ -299,11 +279,13 @@ typedef signed   char    int8_t;
 
 kernel void search_nonce(uint64_t start_nonce, global uint64_t* result_ptr) {
   size_t gid = get_global_id(0);
-
   uint64_t nonce0 = start_nonce + gid * WORKSET_SIZE;
 
   for (uint64_t i = 0; i < WORKSET_SIZE; i++) {
     uint64_t nonce = nonce0 + i;
+    uint32_t B00 = (uint32_t) (nonce & 0xFFFFFFFF);
+    uint32_t B01 = (uint32_t) (nonce >> 32);
+
     uint32_t H0, H1, H2, H3, H4, H5, H6, H7;
 
     H0 = 0x6b08e647UL;
@@ -315,19 +297,14 @@ kernel void search_nonce(uint64_t start_nonce, global uint64_t* result_ptr) {
     H6 = IV(6);
     H7 = IV(7);
 
-    uint32_t M0, M1, M2, M3, M4, M5, M6, M7;
-    uint32_t M8, M9, MA, MB, MC, MD, ME, MF;
     uint32_t V0, V1, V2, V3, V4, V5, V6, V7;
     uint32_t V8, V9, VA, VB, VC, VD, VE, VF;
 
-    M0 = (uint32_t) (nonce & 0xFFFFFFFF);
-    M1 = (uint32_t) (nonce >> 32);
-
-    DO_COMPRESS(0, 0, 0x40);
-    DO_COMPRESS_SIMPLE(1, 0x0, 0x80);
-    DO_COMPRESS_SIMPLE(2, 0x0, 0xC0);
-    DO_COMPRESS_SIMPLE(3, 0x0, 0x100);
-    DO_COMPRESS_SIMPLE(4, 0xFFFFFFFF, 0x11E);
+    DO_COMPRESS(0, 0x00000000, 0x00000040);
+    DO_COMPRESS(1, 0x00000000, 0x00000080);
+    DO_COMPRESS(2, 0x00000000, 0x000000C0);
+    DO_COMPRESS(3, 0x00000000, 0x00000100);
+    DO_COMPRESS(4, 0xFFFFFFFF, 0x0000011E);
 
     uint64_t A = (((uint64_t) H7) << 32) | H6;
 
