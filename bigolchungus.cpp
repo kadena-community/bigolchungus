@@ -186,7 +186,7 @@ int main(int argc, char* const* argv) {
     fread(&start_nonce, 1, 8, urandom);
     fclose(urandom);
 
-    opencl_backend backend(nonce_step_size, true, deviceOverride, platformOverride, kernelPath);
+    opencl_backend backend(nonce_step_size, quiet, deviceOverride, platformOverride, kernelPath);
 
     backend.start_search(
         global_size, local_size, workset_size,
