@@ -188,7 +188,6 @@ int main(int argc, char* const* argv) {
 
     opencl_backend backend(nonce_step_size, quiet, deviceOverride, platformOverride, kernelPath);
 
-
     backend.start_search(
         global_size, local_size, workset_size,
         buf, target_hash);
