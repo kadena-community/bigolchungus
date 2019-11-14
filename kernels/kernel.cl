@@ -8,6 +8,8 @@
 
 #define COMPARE_ALL
 
+#define BLAKE2S_BLOCKBYTES 64
+
 typedef unsigned long  uint64_t;
 typedef signed   long   int64_t;
 typedef unsigned int   uint32_t;
