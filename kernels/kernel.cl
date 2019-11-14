@@ -6,8 +6,7 @@
 # define NATIVE_LITTLE_ENDIAN 1
 #endif
 
-#define BLAKE2S_BLOCKBYTES 64
-
+#define COMPARE_ALL
 
 typedef unsigned long  uint64_t;
 typedef signed   long   int64_t;

@@ -37,3 +37,4 @@ CMakeFiles/
 bigolchungus
 cmake_install.cmake
 Makefile
+test/test-data-*
