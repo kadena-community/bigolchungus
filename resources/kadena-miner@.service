@@ -1,0 +1,13 @@
+[Unit]
+Description=Big Ol Chungus On %I
+
+[Service]
+EnvironmentFile=/home/kadena-miner/env
+User=kadena-miner
+WorkingDirectory=/home/kadena-miner
+ExecStart=/home/kadena-miner/chainweb-miner gpu $NODES --miner-key $PUBLIC_KEY --miner-account $ACCOUNT_NAME --log-level debug --miner-path /home/kadena-miner/BigOlChungus/bigolchungus --miner-args "-k /home/kadena-miner/BigOlChungus/kernels/kernel.cl -d %I"
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
