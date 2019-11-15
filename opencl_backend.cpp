@@ -143,7 +143,7 @@ opencl_backend::opencl_backend(size_t search_nonce_size, bool quiet, int device_
     device_id = res.first;
     context = res.second;
 
-    if(kernel_path_override) {
+    if (kernel_path_override) {
       kernel_path = kernel_path_override;
     } else {
       kernel_path = "kernels/kernel.cl";

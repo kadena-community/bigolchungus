@@ -50,7 +50,7 @@ void usage() {
     "    -n <hexadecimal nonce>\n"
     "      Manually sets a nonce for hashing.\n"
     "      In the unlikely case that your mining host provides a nonce, use this.\n"
-    "      If you are trying to get reproducable tests, use this.\n\n"
+    "      If you are trying to get reproducible tests, use this.\n\n"
   );
 
 }
@@ -93,7 +93,7 @@ void ref_search_nonce(
 int main(int argc, char* const* argv) {
     // test_opencl <hash>
     
-    if(argc == 1) { 
+    if (argc == 1) { 
       usage();
       exit(1);
     }
@@ -109,7 +109,7 @@ int main(int argc, char* const* argv) {
     char* kernelPath = nullptr;
 
     int opt;
-    while((opt = getopt(argc, argv, "d:p:l:w:g:k:n:vh")) != -1) {
+    while ((opt = getopt(argc, argv, "d:p:l:w:g:k:n:vh")) != -1) {
       switch(opt) {
         case 'd':
           deviceOverride = std::stoi(optarg);
@@ -189,7 +189,7 @@ int main(int argc, char* const* argv) {
     // uint8_t* result = new uint8_t[nonce_step_size * 64];
 
     uint64_t start_nonce = 0;
-    if(nonceOverridden) {
+    if (nonceOverridden) {
       start_nonce = nonceOverride;
       if (!quiet) fprintf(stderr, "Using '0x%X' as nonce.\n", start_nonce);
     } else {
