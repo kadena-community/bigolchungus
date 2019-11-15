@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include <chrono>
 #include <sstream>
+#include <iostream>
 #include <string>
 #include <unistd.h>
 
@@ -15,41 +16,41 @@
 void usage() {
   fprintf(
     stderr,
-    "  bigolchungus.sh [ -d <device id>        ]\n"
-    "                  [ -p <platform id>      ]\n"
-    "                  [ -l <local work size>  ]\n"
-    "                  [ -w <work set size     ]\n"
-    "                  [ -g <global work size> ]\n"
-    "                  [ -k <kernel location>  ]\n"
-    "                  [ -v                    ]\n"
+    "  bigolchungus.sh [ -d <device id>         ]\n"
+    "                  [ -p <platform id>       ]\n"
+    "                  [ -l <local work size>   ]\n"
+    "                  [ -w <work set size      ]\n"
+    "                  [ -g <global work size>  ]\n"
+    "                  [ -k <kernel location>   ]\n"
+    "                  [ -n <hexadecimal nonce> ]\n"
+    "                  [ -v                     ]\n"
     "                  <block>\n\n"
     "  1. Device Selection\n\n"
-    "    -d\n"
-    "      set `device id`.\n"
+    "    -d <device id>\n"
     "      Default `0`\n\n"
-    "    -p\n"
-    "      set `platform id`.  \n"
+    "    -p <platform id>\n"
     "      Default `0`\n\n"
     "    Run `clinfo -l` to get info about your device and platform ids.\n\n"
     "  2. Open CL work configuration \n\n"
-    "    -l\n"
-    "      set `local work size`.\n"
+    "    -l <local work size> \n"
     "      Default `256`.\n\n"
     "      If you are on AMD, `256` is probably the best value for you.\n"
     "      If you are on nVidia, you probably want `1024`.\n\n"
-    "    -w\n"
-    "      set `work set size`. You should never have to modify this.\n"
+    "    -w <work set size> \n"
     "      Default `64`\n\n"
-    "    -g\n"
-    "      set `global work size`. You should never have to modify this.\n"
+    "    -g <global work size>\n"
     "      Default `16777216` (1024 * 1024 * 16)\n\n"
-    "    -k\n"
-    "      set `kernel location`\n"
+    "    -k <kernel location>\n"
     "      If you are getting opencl error -46 or -30, try setting this to the absolute path of the `kernel.cl` file.\n"
     "      Defaults to ./kernels/kernel.cl\n\n"
     "  3. Debugging\n\n"
     "    -v\n"
     "      enable verbose mode.\n\n"
+    "  4. Advanced\n\n"
+    "    -n <hexadecimal nonce>\n"
+    "      Manually sets a nonce for hashing.\n"
+    "      In the unlikely case that your mining host provides a nonce, use this.\n"
+    "      If you are trying to get reproducible tests, use this.\n\n"
   );
 
 }
@@ -92,7 +93,7 @@ void ref_search_nonce(
 int main(int argc, char* const* argv) {
     // test_opencl <hash>
     
-    if(argc == 1) { 
+    if (argc == 1) { 
       usage();
       exit(1);
     }
@@ -103,10 +104,12 @@ int main(int argc, char* const* argv) {
     int localWorkSize = 256;
     int workSetSize = 64;
     int globalSize = 1024 * 1024 * 16;
+    uint64_t nonceOverride;
+    bool nonceOverridden = false;
     char* kernelPath = nullptr;
 
     int opt;
-    while((opt = getopt(argc, argv, "d:p:l:w:g:k:vh")) != -1) {
+    while ((opt = getopt(argc, argv, "d:p:l:w:g:k:n:vh")) != -1) {
       switch(opt) {
         case 'd':
           deviceOverride = std::stoi(optarg);
@@ -128,6 +131,10 @@ int main(int argc, char* const* argv) {
           break;
         case 'v':
           quiet = false;
+          break;
+        case 'n':
+          nonceOverridden = true;
+          nonceOverride = std::stoi(optarg, 0, 16);
           break;
         case 'h':
         case '?':
@@ -182,9 +189,15 @@ int main(int argc, char* const* argv) {
     // uint8_t* result = new uint8_t[nonce_step_size * 64];
 
     uint64_t start_nonce = 0;
-    FILE* urandom = fopen("/dev/urandom","rb");
-    fread(&start_nonce, 1, 8, urandom);
-    fclose(urandom);
+    if (nonceOverridden) {
+      start_nonce = nonceOverride;
+      if (!quiet) fprintf(stderr, "Using '0x%X' as nonce.\n", start_nonce);
+    } else {
+      if (!quiet) fprintf(stderr, "Using /dev/urandom as nonce source\n");
+      FILE* urandom = fopen("/dev/urandom","rb");
+      fread(&start_nonce, 1, 8, urandom);
+      fclose(urandom);
+    }
 
     opencl_backend backend(nonce_step_size, quiet, deviceOverride, platformOverride, kernelPath);
 

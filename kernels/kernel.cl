@@ -6,8 +6,9 @@
 # define NATIVE_LITTLE_ENDIAN 1
 #endif
 
-#define BLAKE2S_BLOCKBYTES 64
+#define COMPARE_ALL
 
+#define BLAKE2S_BLOCKBYTES 64
 
 typedef unsigned long  uint64_t;
 typedef signed   long   int64_t;
@@ -214,10 +215,11 @@ typedef signed   char    int8_t;
     d = rotate(d ^ a, (uint)24); \
     c = c + d;                   \
     b = rotate(b ^ c, (uint)25); \
-  } while(0)
+  } while (0)
 
 
-#define ROUND(r0, r)   do { \
+#define ROUND(r0, r)                               \ 
+  do {                                             \
     G(Mx(r0, r, 0), Mx(r0, r, 1), V0, V4, V8, VC); \
     G(Mx(r0, r, 2), Mx(r0, r, 3), V1, V5, V9, VD); \
     G(Mx(r0, r, 4), Mx(r0, r, 5), V2, V6, VA, VE); \
@@ -226,43 +228,43 @@ typedef signed   char    int8_t;
     G(Mx(r0, r, A), Mx(r0, r, B), V1, V6, VB, VC); \
     G(Mx(r0, r, C), Mx(r0, r, D), V2, V7, V8, VD); \
     G(Mx(r0, r, E), Mx(r0, r, F), V3, V4, V9, VE); \
-  } while(0)
+  } while (0)
 
 #define DO_COMPRESS(r, f0, t0) do { \
-    V0 = H0;                    \
-    V1 = H1;                    \
-    V2 = H2;                    \
-    V3 = H3;                    \
-    V4 = H4;                    \
-    V5 = H5;                    \
-    V6 = H6;                    \
-    V7 = H7;                    \
-    V8 = IV0;                   \
-    V9 = IV1;                   \
-    VA = IV2;                   \
-    VB = IV3;                   \
-    VC = t0 ^ IV4;              \
-    VD = IV5;                   \
-    VE = f0 ^ IV6;              \
-    VF = IV7;                   \
-    ROUND(r, 0);                \
-    ROUND(r, 1);                \
-    ROUND(r, 2);                \
-    ROUND(r, 3);                \
-    ROUND(r, 4);                \
-    ROUND(r, 5);                \
-    ROUND(r, 6);                \
-    ROUND(r, 7);                \
-    ROUND(r, 8);                \
-    ROUND(r, 9);                \
-    H0 = H0 ^ V0 ^ V8;          \
-    H1 = H1 ^ V1 ^ V9;          \
-    H2 = H2 ^ V2 ^ VA;          \
-    H3 = H3 ^ V3 ^ VB;          \
-    H4 = H4 ^ V4 ^ VC;          \
-    H5 = H5 ^ V5 ^ VD;          \
-    H6 = H6 ^ V6 ^ VE;          \
-    H7 = H7 ^ V7 ^ VF;          \
+    V0 = H0;                        \
+    V1 = H1;                        \
+    V2 = H2;                        \
+    V3 = H3;                        \
+    V4 = H4;                        \
+    V5 = H5;                        \
+    V6 = H6;                        \
+    V7 = H7;                        \
+    V8 = IV0;                       \
+    V9 = IV1;                       \
+    VA = IV2;                       \
+    VB = IV3;                       \
+    VC = t0 ^ IV4;                  \
+    VD = IV5;                       \
+    VE = f0 ^ IV6;                  \
+    VF = IV7;                       \
+    ROUND(r, 0);                    \
+    ROUND(r, 1);                    \
+    ROUND(r, 2);                    \
+    ROUND(r, 3);                    \
+    ROUND(r, 4);                    \
+    ROUND(r, 5);                    \
+    ROUND(r, 6);                    \
+    ROUND(r, 7);                    \
+    ROUND(r, 8);                    \
+    ROUND(r, 9);                    \
+    H0 = H0 ^ V0 ^ V8;              \
+    H1 = H1 ^ V1 ^ V9;              \
+    H2 = H2 ^ V2 ^ VA;              \
+    H3 = H3 ^ V3 ^ VB;              \
+    H4 = H4 ^ V4 ^ VC;              \
+    H5 = H5 ^ V5 ^ VD;              \
+    H6 = H6 ^ V6 ^ VE;              \
+    H7 = H7 ^ V7 ^ VF;              \
   } while (0)
 
 #ifdef COMPARE_ALL
