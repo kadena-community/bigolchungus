@@ -114,6 +114,10 @@ sudo systemctl enable kadena-miner@0 # Make the miner run on startup for GPU 0
 sudo systemctl start kadena-miner@0 # Make the miner start running now on GPU 0
 ```
 
+For running the miner on a different GPU, just change the number after the `@` in the above commands.
+
+To check the logs, run `journalctl -u kadena-miner@<gpu-id>`
+
 ## Issues
 
   * Each GPU currently takes a full CPU core.  If you wish to run 2 GPUs, you must have at least 2 CPU cores available.
