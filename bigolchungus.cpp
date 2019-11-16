@@ -97,6 +97,9 @@ int main(int argc, char* const* argv) {
       usage();
       exit(1);
     }
+    
+    
+    auto t_start = std::chrono::high_resolution_clock::now();
 
     bool quiet = true;
     int deviceOverride = 0;
@@ -206,7 +209,6 @@ int main(int argc, char* const* argv) {
         buf, target_hash);
 
     int steps = 0;
-    auto t_start = std::chrono::high_resolution_clock::now();
     while (true) {
         if (!quiet) fprintf(stderr,
             "Trying %#lx - %#lx\n", start_nonce, start_nonce + nonce_step_size - 1);
