@@ -99,6 +99,7 @@ cat <<EOF > /home/kadena-miner/env
 NODES='$NODES'
 PUBLIC_KEY='$ACCOUNT_KEY'
 ACCOUNT_NAME='$ACCOUNT_NAME'
+CHAINWEB_MINER_EXEC=/home/kadena-miner/chainweb-miner
 EOF
 
 echo "Miner configuration: \n"

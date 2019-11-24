@@ -105,6 +105,7 @@ their respective platforms.
 
 Run `bigolchungus -h` for more information about configuration.
 
+Also see `bigolchungus.sh` for a helper script for running chungus.
 
 #### Systemd
 
