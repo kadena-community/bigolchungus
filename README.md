@@ -20,8 +20,12 @@
 Currently automatic building is supported only in Ubuntu, and only for running via `systemd`.  If you do not want to
 use systemd, or you are not on ubuntu, [build bigolchungus manually](#manual-building).
 
+The setup script has been tested on 18.04 LTS and has worked seamlessly in the past with nvidia hardware.  It is 
+untested with AMD, and there have been reports of ubuntu not correctly installing AMD drivers via the command used in 
+the script.
+
 There are two requirements for using the automated installation:
-  * Ubuntu 16.04 or 18.04
+  * Ubuntu 18.04
   * You want to use Systemd
 
 If you meet those requirements, the set of commands below should be sufficient to install Big Ol Chungus.
@@ -36,7 +40,6 @@ This will install the required dependencies, set up a user for the `bigolchungus
 walk you through configuring your miner, then reboot.
 
 After this is done, see [systemd](#systemd).
-
 
 #### Manual Building 
 
@@ -126,11 +129,13 @@ To check the logs, run `journalctl -u kadena-miner@<gpu-id>`
 
 ## Troubleshooting
 
-First thing to try is always to `cd` in to the `BigOlChungus` project root and run `test/test.sh`.  If that works, then 
-the issue is with the way you tried to run it. Everything else is fine.
+Run `test/test.sh` from the project root.
 
-Make sure that permissions are properly set up.  If you're using the provided systemd service, every file will need to 
-be owned by the `kadena-miner` user.
+  * If you get an output where the last line is just 3 numbers separated by spaces, everything is fine.
+  * If you see something like "No OpenCL Platforms Detected" Then your issue is with drivers. Run `opencl -l` to verify. 
+    If you see no output, then drivers are definitely not installed correctly. Try installing drivers and then rebooting.
+  * If you see error -30 or -46, then you likely have a permissions issue, or you have deleted the `kernel.cl` file in 
+    the `kernels` directory.  Make sure that file exists, and that your current user has permission to access it.
 
 ## Contributing
 

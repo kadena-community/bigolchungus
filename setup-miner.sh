@@ -54,10 +54,10 @@ export $(grep -E '^VERSION_ID=' /etc/os-release | sed 's/"//g')
 
 if [ "$?" != "0" ] || \
    [ "$ID" != "ubuntu" ] || \
-   [ "$VERSION_ID" != "18.04" -a "$VERSION_ID" != "16.04" ] ; then
+   [ "$VERSION_ID" != "18.04" ] ; then
 
   echo "You are not on a supported OS."
-  echo "Please use Ubuntu 16.04 or Ubuntu 18.04."
+  echo "Please use Ubuntu 18.04."
   echo "Alternatively, perform a manual installation."
   echo ""
   echo "Setup aborted."
@@ -103,7 +103,6 @@ EOF
 
 echo "Miner configuration: \n"
 cat /home/kadena-miner/env
-
 
 echo "\nInstalling base dependencies..."
 apt-get update
