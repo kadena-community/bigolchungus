@@ -74,7 +74,7 @@ useradd kadena-miner
 echo "\nConfiguring miner..."
 EXAMPLE_NODE="--node fr1.chainweb.com:443"
 
-while [ -z $NODES ]; do
+while [ -z "$NODES" ]; do
   echo -n "Enter the nodes you wish to connect to [example = $EXAMPLE_NODE]: "
   read NODES
 done
