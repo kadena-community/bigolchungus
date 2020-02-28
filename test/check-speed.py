@@ -12,4 +12,4 @@ data = [x.split(' ')[2].strip() for x in data]
 data = [float(x) / 1000 / 1000 for x in data]
 mu = np.mean(data)
 sigma = 1.96 * np.std(data) / np.sqrt(len(data))
-print('%.2f ± %.2f MH/s' % (mu, sigma))
+print('%.2f +/- %.2f MH/s' % (mu, sigma))

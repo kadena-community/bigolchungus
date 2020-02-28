@@ -200,18 +200,10 @@ typedef signed   char    int8_t;
 #define Z9E   D
 #define Z9F   0
 
-#define B48 0x0
-#define B49 0x0
-#define B4A 0x0
-#define B4B 0x0
-#define B4C 0x0
-#define B4D 0x0
-#define B4E 0x0
-#define B4F 0x0
-
-#define Mx(r, i) Mx__(Z ## r ## i)
-#define Mx__(n)  Bx(n)
-#define Bx(i) B4 ## i
+#define Mx(r0, r, i)    Mx_(r0, Z ## r ## i)
+#define Mx_(r0, n)      Mx__(r0, n)
+#define Mx__(r0, n)     Bx(r0, n)
+#define Bx(r, i) B ## r ## i
 
 #define G(m0, m1, a,b,c,d)       \
   do {                           \
@@ -225,96 +217,107 @@ typedef signed   char    int8_t;
     b = rotate(b ^ c, (uint)25); \
   } while (0)
 
-#define ROUND(r)                                   \
+
+#define ROUND(r0, r)                               \
   do {                                             \
-    G(Mx(r, 0), Mx(r, 1), V0, V4, V8, VC); \
-    G(Mx(r, 2), Mx(r, 3), V1, V5, V9, VD); \
-    G(Mx(r, 4), Mx(r, 5), V2, V6, VA, VE); \
-    G(Mx(r, 6), Mx(r, 7), V3, V7, VB, VF); \
-    G(Mx(r, 8), Mx(r, 9), V0, V5, VA, VF); \
-    G(Mx(r, A), Mx(r, B), V1, V6, VB, VC); \
-    G(Mx(r, C), Mx(r, D), V2, V7, V8, VD); \
-    G(Mx(r, E), Mx(r, F), V3, V4, V9, VE); \
+    G(Mx(r0, r, 0), Mx(r0, r, 1), V0, V4, V8, VC); \
+    G(Mx(r0, r, 2), Mx(r0, r, 3), V1, V5, V9, VD); \
+    G(Mx(r0, r, 4), Mx(r0, r, 5), V2, V6, VA, VE); \
+    G(Mx(r0, r, 6), Mx(r0, r, 7), V3, V7, VB, VF); \
+    G(Mx(r0, r, 8), Mx(r0, r, 9), V0, V5, VA, VF); \
+    G(Mx(r0, r, A), Mx(r0, r, B), V1, V6, VB, VC); \
+    G(Mx(r0, r, C), Mx(r0, r, D), V2, V7, V8, VD); \
+    G(Mx(r0, r, E), Mx(r0, r, F), V3, V4, V9, VE); \
   } while (0)
 
-/* 
-Macros
-- blake2s state vector H0, ..., H7
-- input word32s B40, B41, B42, B43, B44
-- partial input word PB45[0-16] (the remaining bytes get overwritten)
-- target A0, B0, C0, D0
-*/
+#define DO_COMPRESS(r, f0, t0) do { \
+    V0 = H0;                        \
+    V1 = H1;                        \
+    V2 = H2;                        \
+    V3 = H3;                        \
+    V4 = H4;                        \
+    V5 = H5;                        \
+    V6 = H6;                        \
+    V7 = H7;                        \
+    V8 = IV0;                       \
+    V9 = IV1;                       \
+    VA = IV2;                       \
+    VB = IV3;                       \
+    VC = t0 ^ IV4;                  \
+    VD = IV5;                       \
+    VE = f0 ^ IV6;                  \
+    VF = IV7;                       \
+    ROUND(r, 0);                    \
+    ROUND(r, 1);                    \
+    ROUND(r, 2);                    \
+    ROUND(r, 3);                    \
+    ROUND(r, 4);                    \
+    ROUND(r, 5);                    \
+    ROUND(r, 6);                    \
+    ROUND(r, 7);                    \
+    ROUND(r, 8);                    \
+    ROUND(r, 9);                    \
+    H0 = H0 ^ V0 ^ V8;              \
+    H1 = H1 ^ V1 ^ V9;              \
+    H2 = H2 ^ V2 ^ VA;              \
+    H3 = H3 ^ V3 ^ VB;              \
+    H4 = H4 ^ V4 ^ VC;              \
+    H5 = H5 ^ V5 ^ VD;              \
+    H6 = H6 ^ V6 ^ VE;              \
+    H7 = H7 ^ V7 ^ VF;              \
+  } while (0)
+
+#ifdef COMPARE_ALL
+  #define TEST_RESULT() (                           \
+      A0 > A                                        \
+      || (A0 == A && B0 > B)                        \
+      || (A0 == A && B0 == B && C0 > C)             \
+      || (A0 == A && B0 == B && C0 == C && D0 >= D) \
+    )
+#else
+  #define TEST_RESULT() (A0 > A)
+#endif
+
 
 kernel void search_nonce(uint64_t start_nonce, global uint64_t* result_ptr) {
-
   size_t gid = get_global_id(0);
-  uint64_t nonce0 = (start_nonce + gid * WORKSET_SIZE);
+  uint64_t nonce0 = start_nonce + gid * WORKSET_SIZE;
 
   for (uint64_t i = 0; i < WORKSET_SIZE; i++) {
+    uint64_t nonce = nonce0 + i;
+    uint32_t B00 = (uint32_t) (nonce & 0xFFFFFFFF);
+    uint32_t B01 = (uint32_t) (nonce >> 32);
 
-    const uint64_t nonce = nonce0 + i;
+    uint32_t H0, H1, H2, H3, H4, H5, H6, H7;
 
-    // nonce is byte 22-30
-    //
-    // word 5: 0x0000FFFF
-    // word 6: 0xFFFFFFFF
-    // word 7: 0xFFFF0000
-    //
-    // 50 51 52 53 | 60 61 62 63 | 70 71 72 73
-    // xx xx nn nn   nn nn nn nn   nn nn 00 00
-
-    const uint32_t B45 = ((uint32_t) nonce << 16) | (PB45 & 0x0000FFFF);
-    const uint32_t B46 = (uint32_t) (nonce >> 16);
-    const uint32_t B47 = (uint32_t) (nonce >> 48);
+    H0 = 0x6b08e647UL;
+    H1 = IV(1);
+    H2 = IV(2);
+    H3 = IV(3);
+    H4 = IV(4);
+    H5 = IV(5);
+    H6 = IV(6);
+    H7 = IV(7);
 
     uint32_t V0, V1, V2, V3, V4, V5, V6, V7;
     uint32_t V8, V9, VA, VB, VC, VD, VE, VF;
 
-    V0 = H0;
-    V1 = H1;
-    V2 = H2;
-    V3 = H3;
-    V4 = H4;
-    V5 = H5;
-    V6 = H6;
-    V7 = H7;
-    V8 = IV0;
-    V9 = IV1;
-    VA = IV2;
-    VB = IV3;
-    VC = 0x0000011E ^ IV4;
-    VD = IV5;
-    VE = 0xFFFFFFFF ^ IV6;
-    VF = IV7;
-    ROUND(0);
-    ROUND(1);
-    ROUND(2);
-    ROUND(3);
-    ROUND(4);
-    ROUND(5);
-    ROUND(6);
-    ROUND(7);
-    ROUND(8);
-    ROUND(9);
+    DO_COMPRESS(0, 0x00000000, 0x00000040);
+    DO_COMPRESS(1, 0x00000000, 0x00000080);
+    DO_COMPRESS(2, 0x00000000, 0x000000C0);
+    DO_COMPRESS(3, 0x00000000, 0x00000100);
+    DO_COMPRESS(4, 0xFFFFFFFF, 0x0000011E);
 
-    const uint64_t A = (((uint64_t) (H7 ^ V7 ^ VF)) << 32) | (H6 ^ V6 ^ VE);
-#ifdef COMPARE_ALL
-    const uint64_t B = (((uint64_t) (H5 ^ V5 ^ VD)) << 32) | (H4 ^ V4 ^ VC);
-    const uint64_t C = (((uint64_t) (H3 ^ V3 ^ VB)) << 32) | (H2 ^ V2 ^ VA);
-    const uint64_t D = (((uint64_t) (H1 ^ V1 ^ V9)) << 32) | (H0 ^ V0 ^ V8);
-#endif
+    uint64_t A = (((uint64_t) H7) << 32) | H6;
 
-#ifdef COMPARE_ALL
-    if (A0 > A || (A0 == A && B0 > B) || (A0 == A && B0 == B && C0 > C) || (A0 == A && B0 == B && C0 == C && D0 >= D)) {
-        *result_ptr = nonce;
-        break;
+    #ifdef COMPARE_ALL
+    uint64_t B = (((uint64_t) H5) << 32) | H4;
+    uint64_t C = (((uint64_t) H3) << 32) | H2;
+    uint64_t D = (((uint64_t) H1) << 32) | H0;
+    #endif
+
+    if (TEST_RESULT()) {
+      *result_ptr = nonce;
     }
-#else
-    if (A0 > A)
-        *result_ptr = nonce;
-        break;
-    }
-#endif
   }
 }
-

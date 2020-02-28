@@ -19,7 +19,6 @@ echo ""
 for i in $(seq $1); do
   cat $MYDIR/header.bin | \
     $MYDIR/../bigolchungus \
-      -k $MYDIR/../kernels/kernel.cl \
       ${@:2} \
       $BLOCK 1>> $FILE_PATH 2>> $FILE_PATH-err
 
