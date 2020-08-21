@@ -22,7 +22,6 @@ void usage() {
     "                  [ -w <work set size      ]\n"
     "                  [ -g <global work size>  ]\n"
     "                  [ -k <kernel location>   ]\n"
-    "                  [ -a <alternative nonce> ]\n"
     "                  [ -n <hexadecimal nonce> ]\n"
     "                  [ -v                     ]\n"
     "                  <block>\n\n"
@@ -49,8 +48,6 @@ void usage() {
     "    -v\n"
     "      enable verbose mode.\n\n"
     "  4. Advanced\n\n"
-    "    -a uses the first 8 bytes of the block header as nonce. This is about 5 times slower than the default.\n"
-    "      This also requires the use of a different kernel that can be found at ./kernels/alternative-nonce.cl\n\n"
     "    -n <hexadecimal nonce>\n"
     "      Manually sets a nonce for hashing.\n"
     "      In the unlikely case that your mining host provides a nonce, use this.\n"
@@ -68,40 +65,6 @@ void read_target_bytes(const char* str, uint8_t* target) {
     }
 }
 
-void ref_search_nonce(
-  size_t gid,
-  uint64_t start_nonce,
-  uint64_t work_set,
-  uint8_t* buf,
-  uint32_t last_block_size,
-  uint8_t* target_hash,
-  uint8_t* result_ptr
-) {
-    uint64_t nonce0 = start_nonce + gid * work_set;
-
-    for (uint64_t i = 0; i < work_set; i++) {
-        uint64_t nonce = nonce0 + i;
-
-        blake2s_state state;
-        uint8_t hash[32];
-        blake2s_init(&state, BLAKE2S_OUTBYTES);
-        blake2s_update(&state, &nonce, 8);
-        blake2s_update(&state, buf, (320 - 64 + last_block_size) - 8);
-        blake2s_final(&state, hash, BLAKE2S_OUTBYTES);
-
-        // fprintf(stderr, "%ld -> %d\n", gid * work_set + i, compare_uint256(target_hash, hash));
-        result_ptr[gid * work_set + i] = compare_uint256(target_hash, hash);
-    }
-}
-
-void print_hash(uint8_t* buf)
-{
-    for (int i = 3; i >= 0; --i) {
-        fprintf(stderr, "%016lx ", *((uint64_t*) (buf + i*8)));
-    }
-    fprintf(stderr, "\n");
-}
-
 int main(int argc, char* const* argv) {
     // test_opencl <hash>
 
@@ -111,7 +74,7 @@ int main(int argc, char* const* argv) {
     }
 
 
-    auto t_start = std::chrono::high_resolution_clock::now();
+    std::chrono::steady_clock::time_point t_start = std::chrono::high_resolution_clock::now();
 
     bool quiet = true;
     int deviceOverride = 0;
@@ -122,7 +85,6 @@ int main(int argc, char* const* argv) {
     uint64_t nonceOverride;
     bool nonceOverridden = false;
     char* kernelPath = nullptr;
-    bool alternativeNonce = false;
 
     int opt;
     while ((opt = getopt(argc, argv, "d:p:l:w:g:k:n:avh")) != -1) {
@@ -144,9 +106,6 @@ int main(int argc, char* const* argv) {
           break;
         case 'k':
           kernelPath = optarg;
-          break;
-        case 'a':
-          alternativeNonce = true;
           break;
         case 'v':
           quiet = false;
@@ -192,7 +151,7 @@ int main(int argc, char* const* argv) {
         fprintf(stderr, "\n");
     }
 
-    if (!quiet) fprintf(stderr, "bufsize = %d\n", bufsize);
+    if (!quiet) fprintf(stderr, "bufsize = %lu\n", bufsize);
 
     assert(320 - 64 + 1 <= bufsize && bufsize <= 320);
     uint32_t last_block_size = bufsize - (320-64);
@@ -210,7 +169,7 @@ int main(int argc, char* const* argv) {
     uint64_t start_nonce = 0;
     if (nonceOverridden) {
       start_nonce = nonceOverride;
-      if (!quiet) fprintf(stderr, "Using '0x%X' as nonce.\n", start_nonce);
+      if (!quiet) fprintf(stderr, "Using '0x%llX' as nonce.\n", start_nonce);
     } else {
       if (!quiet) fprintf(stderr, "Using /dev/urandom as nonce source\n");
       FILE* urandom = fopen("/dev/urandom","rb");
@@ -218,7 +177,7 @@ int main(int argc, char* const* argv) {
       fclose(urandom);
     }
 
-    opencl_backend backend(nonce_step_size, quiet, deviceOverride, platformOverride, kernelPath, alternativeNonce);
+    opencl_backend backend(nonce_step_size, quiet, deviceOverride, platformOverride, kernelPath);
 
     backend.start_search(
         global_size, local_size, workset_size,
@@ -227,23 +186,18 @@ int main(int argc, char* const* argv) {
     int steps = 0;
     while (true) {
         if (!quiet) fprintf(stderr,
-            "Trying %#lx - %#lx\n", start_nonce, start_nonce + nonce_step_size - 1);
+            "Trying %#llx - %#llx\n", start_nonce, start_nonce + nonce_step_size - 1);
         steps += 1;
         uint64_t found = backend.continue_search(start_nonce);
 
         if (found != 0) {
-            if (!quiet) fprintf(stderr, "Done %#lx!\n", found);
+            if (!quiet) fprintf(stderr, "Done %#llx!\n", found);
 
             uint8_t hash[32];
             blake2s_state state;
             blake2s_init(&state, BLAKE2S_OUTBYTES);
-            if (alternativeNonce) {
-                blake2s_update(&state, &found, 8);
-                blake2s_update(&state, buf + 8, bufsize - 8);
-            } else {
-                blake2s_update(&state, buf, bufsize - 8);
-                blake2s_update(&state, &found, 8);
-            }
+            blake2s_update(&state, buf, bufsize - 8);
+            blake2s_update(&state, &found, 8);
             blake2s_final(&state, hash, BLAKE2S_OUTBYTES);
 
             if (compare_uint256(target_hash, hash) == -1) {
@@ -251,11 +205,11 @@ int main(int argc, char* const* argv) {
                 exit(-1);
             }
 
-            auto t_end = std::chrono::high_resolution_clock::now();
+            std::chrono::steady_clock::time_point t_end = std::chrono::high_resolution_clock::now();
             float milliseconds = std::chrono::duration<double, std::milli>(t_end-t_start).count();
             uint64_t numHashes = steps * nonce_step_size;
             double rate = numHashes / (milliseconds / 1000.0);
-            printf("%016" PRIx64 " %ld %ld", found, numHashes, (uint64_t) rate);
+            printf("%016" PRIx64 " %llu %llu", found, numHashes, (uint64_t) rate);
             break;
         } else {
             start_nonce += nonce_step_size;
