@@ -138,22 +138,17 @@ namespace detail {
     }
 };
 
-opencl_backend::opencl_backend(size_t search_nonce_size, bool quiet, int device_override, int platform_override, char* kernel_path_override, bool alternative_nonce) {
+opencl_backend::opencl_backend(size_t search_nonce_size, bool quiet, int device_override, int platform_override, char* kernel_path_override) {
     platform_id = detail::choosePlatform(quiet, platform_override);
     std::pair<cl_device_id, cl_context> res =
         detail::chooseDeviceAndCreateContext(platform_id, quiet, device_override);
     device_id = res.first;
     context = res.second;
-    alternativeNonce = alternative_nonce;
 
     if (kernel_path_override) {
       kernel_path = kernel_path_override;
     } else {
-      if (alternativeNonce) {
-        kernel_path = "kernels/alternative-nonce.cl";
-      } else {
-        kernel_path = "kernels/kernel.cl";
-      }
+      kernel_path = "kernels/kernel.cl";
     }
 
     if (!quiet) std::cerr << "Creating command queue" << std::endl;
@@ -194,36 +189,23 @@ void opencl_backend::start_search(
 
     std::ostringstream ss;
 
-    if (alternativeNonce) {
-        for (size_t i = 0; i < 320; i+=4) {
-            if (i == 0 || i == 4) continue;
-            uint32_t value;
-            if (i < 286) {
-                value = *(uint32_t*)(block_data + i);
-            } else {
-                value = 0;
-            }
-            ss << "-DB" << (i / 64) << tohex((i % 64) / 4) << "=" << value << "U ";
-        }
-    } else {
-        std::cerr << "Preprocessing blake2s state" << std::endl;
-        blake2s_state s;
-        blake2s_init(&s, BLAKE2S_OUTBYTES);
-        blake2s_update(&s, block_data, 257); /* pass one extra byte to force compress */
+    std::cerr << "Preprocessing blake2s state" << std::endl;
+    blake2s_state s;
+    blake2s_init(&s, BLAKE2S_OUTBYTES);
+    blake2s_update(&s, block_data, 257); /* pass one extra byte to force compress */
 
-        /* blake2 state H */
-        for (size_t i = 0; i < 8; ++i) {
-            ss << "-DH" << i << "=" << (s.h)[i] << "U ";
-        }
-
-        /* pending input for final block */
-        for (size_t i = 256; i < 276; i+=4) {
-            uint32_t value = *(uint32_t*)(block_data + i);
-            ss << "-DB" << (i / 64) << tohex((i % 64) / 4) << "=" << value << "U ";
-        }
-        /* partial input word for B45 */
-        ss << "-DPB" << (276 / 64) << tohex((276 % 64) / 4) << "=" << *(uint32_t*)(block_data + 276) << "U ";
+    /* blake2 state H */
+    for (size_t i = 0; i < 8; ++i) {
+        ss << "-DH" << i << "=" << (s.h)[i] << "U ";
     }
+
+    /* pending input for final block */
+    for (size_t i = 256; i < 276; i+=4) {
+        uint32_t value = *(uint32_t*)(block_data + i);
+        ss << "-DB" << (i / 64) << tohex((i % 64) / 4) << "=" << value << "U ";
+    }
+    /* partial input word for B45 */
+    ss << "-DPB" << (276 / 64) << tohex((276 % 64) / 4) << "=" << *(uint32_t*)(block_data + 276) << "U ";
 
     for (size_t i = 0; i < 32; i += 8) {
         char j = (char)('A' + (3 - i / 8));
@@ -242,7 +224,7 @@ void opencl_backend::start_search(
 
     if (ret != 0) {
         size_t len = 0;
-        clGetProgramBuildInfo(search_nonce->program, device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
+        clGetProgramBuildInfo(search_nonce->program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &len);
         char *log = new char[len];
         clGetProgramBuildInfo(search_nonce->program, device_id, CL_PROGRAM_BUILD_LOG, len, log, NULL);
         std::cerr << "\n\nBuildlog:\n" << log << "\n\n";
