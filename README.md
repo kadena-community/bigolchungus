@@ -50,7 +50,6 @@ In ubuntu these dependencies are:
   * opencl-headers
   * clinfo
   * g++
-  * librocksdb5.8
   * ubuntu-drivers-common
   * cmake
   * A chainweb-miner binary
@@ -62,12 +61,12 @@ If you are on ubuntu, you can install them via
 apt-get update
 apt install -y git ocl-icd-* opencl-headers clinfo
 apt install -y g++
-apt install -y librocksdb5.8 ubuntu-drivers-common
+apt install -y ubuntu-drivers-common
 apt install -y cmake
 ubuntu-drivers autoinstall --gpgpu
 ```
 
-Then you'll also need the chainweb miner. You can obtain a release or build from source here: https://github.com/kadena-io/chainweb-miner/
+Then you'll also need the chainweb mining client. You can obtain a release or build from source here: https://github.com/kadena-io/chainweb-mining-client/
 
 After installing dependencies, the project can be built via
 
@@ -90,17 +89,18 @@ You can set up systemd from here if you like.  There is a sample systemd service
 The simplest and most common invocation of the miner will be
 
 ```sh
-chainweb-miner gpu \
+chainweb-mining-client \
   --node my.node:port \
-  --miner-key $MINER_KEY \
-  --miner-account $MINER_ACCOUNT \
+  --tls \
+  --insecure \
+  --key $MINER_PUBLIC_KEY \
   --log-level debug \
-  --miner-path /path/to/BigOlChungus/bigolchungus
-  --miner-args "-k /path/to/BigOlChungus/kernels/kernel.cl
+  --worker external \
+  --external-worker-cmd /path/to/BigOlChungus/bigolchungus
 ```
 
 This will run the miner on the first GPU that OpenCL detects.  You can configure the GPU which `bigolchungus` runs on by
-appending `-p $platform_number -d $device_number` to the end of `--miner-args`.  Run `clinfo -l` to see your GPUs and 
+appending `-p $platform_number -d $device_number` to the end of `--external-worker-cmd`.  Run `clinfo -l` to see your GPUs and 
 their respective platforms.
 
 Run `bigolchungus -h` for more information about configuration.
@@ -126,7 +126,7 @@ To check the logs, run `journalctl -u kadena-miner@<gpu-id>`
 
   * Each GPU currently takes a full CPU core.  If you wish to run 2 GPUs, you must have at least 2 CPU cores available.
   * Running multiple GPUs requires running multiple instances of the miner
-  * OpenCL errors are cryptic and `chainweb-miner` does not have clear output.
+  * OpenCL errors are cryptic and `chainweb-mining-client` does not have clear output.
 
 ## Troubleshooting
 
