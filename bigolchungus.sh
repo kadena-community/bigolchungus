@@ -10,23 +10,21 @@ check_set() {
 }
 
 check_set "PUBLIC_KEY"
-check_set "ACCOUNT_NAME"
 check_set "NODES" "eg: NODES='--node tsundere.waifuwars.org:35090 --node bigchungusmining.energy:4202'"
 
-if [ -z "$CHAINWEB_MINER_EXEC" ]; then
-  CHAINWEB_MINER_EXEC=$(which chainweb-miner)
-  if [ -z "$CHAINWEB_MINER_EXEC" ]; then
-    echo "chainweb-miner not in PATH and CHAINWEB_MINER_EXEC not set."
-    echo "Either place chainweb-miner in your path, or set CHAINWEB_MINER_PATH to the location of the chainweb-miner"
-    echo "executable."
+if [ -z "$CHAINWEB_MINING_CLIENT_EXEC" ]; then
+  CHAINWEB_MINING_CLIENT_EXEC=$(which chainweb-mining-client)
+  if [ -z "$CHAINWEB_MINING_CLIENT_EXEC" ]; then
+    echo "chainweb-mining-client not in PATH and CHAINWEB_MINING_CLIENT_EXEC not set."
+    echo "Place the chainweb-mining-client executable in your path."
     exit 1 
   fi
 fi
 
-LS_RES=$(ls $CHAINWEB_MINER_EXEC)
+LS_RES=$(ls $CHAINWEB_MINING_CLIENT_EXEC)
 
 if [ $? -ne 0 ]; then
-  echo "Invalid CHAINWEB_MINER_EXEC location. ($CHAINWEB_MINER_EXEC)"
+  echo "Invalid CHAINWEB_MINING_CLIENT_EXEC location. ($CHAINWEB_MINING_CLIENT_EXEC)"
   exit 2
 fi
 
@@ -40,10 +38,11 @@ fi
 
 MINER_ARGS="-k $MYDIR/kernels/kernel.cl $@"
 
-$CHAINWEB_MINER_EXEC gpu \
+$CHAINWEB_MINING_CLIENT_EXEC \
   $NODES \
   --log-level debug \
-  --miner-key $PUBLIC_KEY \
-  --miner-account $ACCOUNT_NAME \
-  --miner-path $MYDIR/bigolchungus \
-  --miner-args "$MINER_ARGS"
+  --public-key $PUBLIC_KEY \
+  --worker external \
+  --tls \
+  --insecure \
+  --external-worker-cmd "$MYDIR/bigolchungus $MINER_ARGS"
